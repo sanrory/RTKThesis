@@ -13,4 +13,4 @@ newer $FILE $FILE
 quit
 SCRIPT
 cp $FILE $LOCAL_FILE
-uncompress -q $LOCAL_FILE
+uncompress -f $LOCAL_FILE
