@@ -13,6 +13,6 @@ binary
 get $FILE
 quit
 SCRIPT
-cp FILE LOCAL_FILE_Z
-uncompress LOCAL_FILE_Z
-mv LOCAL_FILE corrections/LOCAL_FILE
+cp $FILE $LOCAL_FILE_Z
+uncompress $LOCAL_FILE_Z
+mv $LOCAL_FILE corrections/$LOCAL_FILE
