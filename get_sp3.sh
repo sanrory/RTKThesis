@@ -2,13 +2,12 @@
 HOST='cddis.gsfc.nasa.gov'
 USER='anonymous'
 PASSWD='passwd'
-FILE='igu18395_18.sp3.Z'
+FILE='igu18396_00.sp3.Z'
 
-ftp -n $HOST <<END_SCRIPT
-quote USER $USER
-quote PASS $PASSWD
+ftp -n $HOST <<SCRIPT
+user $USER $PASSWD
 cd gps/products/latest/ultra
+binary
 get $FILE
 quit
-END_SCRIPT
-exit 0
+SCRIPT
