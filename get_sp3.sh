@@ -4,7 +4,7 @@ USER='anonymous'
 PASSWD='passwd'
 FILE='igu18396_00.sp3.Z'
 LOCAL_FILE_Z='latestCorrection.sp3.Z'
-LOCAL_FILE = 'latestCorrection.sp3'
+LOCAL_FILE='latestCorrection.sp3'
 
 ftp -n $HOST <<SCRIPT
 user $USER $PASSWD
