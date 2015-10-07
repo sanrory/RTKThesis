@@ -1,7 +1,7 @@
 /*------------------------------------------------------------------------------
 * solution.c : solution functions
 *
-*          Copyright (C) 2007-2013 by T.TAKASU, All rights reserved.
+*          Copyright (C) 2007-2015 by T.TAKASU, All rights reserved.
 *
 * reference :
 *     [1] National Marine Electronic Association and International Marine
@@ -37,6 +37,8 @@
 *           2012/02/05  1.10 fix bug on output nmea gpgsv
 *           2013/02/18  1.11 support nmea GLGSA,GAGSA,GLCSV,GACSV sentence
 *           2013/09/01  1.12 fix bug on presentation of nmea time tag
+*           2015/02/11  1.13 fix bug on checksum of $GLGSA and $GAGSA
+*                            fix bug on satellite id of $GAGSA
 *-----------------------------------------------------------------------------*/
 #include <ctype.h>
 #include "rtklib.h"
@@ -1048,9 +1050,9 @@ extern int outnmea_rmc(unsigned char *buff, const sol_t *sol)
     else dir=dirp;
     deg2dms(fabs(pos[0])*R2D,dms1);
     deg2dms(fabs(pos[1])*R2D,dms2);
-    p+=sprintf(p,"$GPRMC,%02.0f%02.0f%05.2f,A,%02.0f%010.7f,%s,%03.0f%010.7f,%s,,,%02.0f%02.0f%02d,%.1f,%s,%s",
+    p+=sprintf(p,"$GPRMC,%02.0f%02.0f%05.2f,A,%02.0f%010.7f,%s,%03.0f%010.7f,%s,%4.2f,%4.2f,%02.0f%02.0f%02d,%.1f,%s,%s",
                ep[3],ep[4],ep[5],dms1[0],dms1[1]+dms1[2]/60.0,pos[0]>=0?"N":"S",
-               dms2[0],dms2[1]+dms2[2]/60.0,pos[1]>=0?"E":"W",
+               dms2[0],dms2[1]+dms2[2]/60.0,pos[1]>=0?"E":"W",vel/KNOT2M,dir,
                ep[2],ep[1],(int)ep[0]%100,amag,emag,
                sol->stat==SOLQ_DGPS||sol->stat==SOLQ_FLOAT||sol->stat==SOLQ_FIX?"D":"A");
     for (q=(char *)buff+1,sum=0;*q;q++) sum^=*q; /* check-sum */
@@ -1090,13 +1092,13 @@ extern int outnmea_gga(unsigned char *buff, const sol_t *sol)
     p+=sprintf(p,"*%02X%c%c",sum,0x0D,0x0A);
     return p-(char *)buff;
 }
-/* output solution in the form of nmea GSA sentence --------------------------*/
+/* output solution in the form of nmea GSA sentences -------------------------*/
 extern int outnmea_gsa(unsigned char *buff, const sol_t *sol,
                        const ssat_t *ssat)
 {
     double azel[MAXSAT*2],dop[4];
     int i,sat,sys,nsat,prn[MAXSAT];
-    char *p=(char *)buff,*q,sum;
+    char *p=(char *)buff,*q,*s,sum;
     
     trace(3,"outnmea_gsa:\n");
     
@@ -1116,6 +1118,7 @@ extern int outnmea_gsa(unsigned char *buff, const sol_t *sol,
         nsat++;
     }
     if (nsat>0) {
+        s=p;
         p+=sprintf(p,"$GPGSA,A,%d",sol->stat<=0?1:3);
         for (i=0;i<12;i++) {
             if (i<nsat) p+=sprintf(p,",%02d",prn[i]);
@@ -1123,7 +1126,7 @@ extern int outnmea_gsa(unsigned char *buff, const sol_t *sol,
         }
         dops(nsat,azel,0.0,dop);
         p+=sprintf(p,",%3.1f,%3.1f,%3.1f,1",dop[1],dop[2],dop[3]);
-        for (q=(char *)buff+1,sum=0;*q;q++) sum^=*q; /* check-sum */
+        for (q=s+1,sum=0;*q;q++) sum^=*q; /* check-sum */
         p+=sprintf(p,"*%02X%c%c",sum,0x0D,0x0A);
     }
     /* GLGSA: glonass */
@@ -1134,6 +1137,7 @@ extern int outnmea_gsa(unsigned char *buff, const sol_t *sol,
         nsat++;
     }
     if (nsat>0) {
+        s=p;
         p+=sprintf(p,"$GLGSA,A,%d",sol->stat<=0?1:3);
         for (i=0;i<12;i++) {
             if (i<nsat) p+=sprintf(p,",%02d",prn[i]+64);
@@ -1141,7 +1145,7 @@ extern int outnmea_gsa(unsigned char *buff, const sol_t *sol,
         }
         dops(nsat,azel,0.0,dop);
         p+=sprintf(p,",%3.1f,%3.1f,%3.1f,2",dop[1],dop[2],dop[3]);
-        for (q=(char *)buff+1,sum=0;*q;q++) sum^=*q; /* check-sum */
+        for (q=s+1,sum=0;*q;q++) sum^=*q; /* check-sum */
         p+=sprintf(p,"*%02X%c%c",sum,0x0D,0x0A);
     }
     /* GAGSA: galileo */
@@ -1152,14 +1156,15 @@ extern int outnmea_gsa(unsigned char *buff, const sol_t *sol,
         nsat++;
     }
     if (nsat>0) {
+        s=p;
         p+=sprintf(p,"$GAGSA,A,%d",sol->stat<=0?1:3);
         for (i=0;i<12;i++) {
-            if (i<nsat) p+=sprintf(p,",%02d",prn[i]+64);
+            if (i<nsat) p+=sprintf(p,",%02d",prn[i]);
             else        p+=sprintf(p,",");
         }
         dops(nsat,azel,0.0,dop);
         p+=sprintf(p,",%3.1f,%3.1f,%3.1f,3",dop[1],dop[2],dop[3]);
-        for (q=(char *)buff+1,sum=0;*q;q++) sum^=*q; /* check-sum */
+        for (q=s+1,sum=0;*q;q++) sum^=*q; /* check-sum */
         p+=sprintf(p,"*%02X%c%c",sum,0x0D,0x0A);
     }
     return p-(char *)buff;
