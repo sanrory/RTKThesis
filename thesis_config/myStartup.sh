@@ -1,5 +1,5 @@
 #!/bin/bash
-echo odroid | sudo -S wvdial & disown
-sleep 60
+#echo odroid | sudo -S wvdial & disown
+sleep 20
 cd ~/RTK_thesis/RTKThesis/thesis_config
 screen -d -m ./rtkrcv -s -o rtkLogging.conf

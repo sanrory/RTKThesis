@@ -1418,6 +1418,8 @@ extern int outsols(unsigned char *buff, const sol_t *sol, const double *rb,
         return 0;
     }
     timeu=opt->timeu<0?0:(opt->timeu>20?20:opt->timeu);
+    /*SURF SENSE EDIT*/
+    timeu=1;
 
     time=sol->time;
     if (opt->times>=TIMES_UTC) time=gpst2utc(time);
